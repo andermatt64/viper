@@ -1,0 +1,9 @@
+[package]
+name = "viper"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.1.1", features = ["derive"] }
+libconfig-rs = "2.0.0"
+stderrlog = "0.5.4"
