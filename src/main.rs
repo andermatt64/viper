@@ -1,29 +1,11 @@
-use std::path::PathBuf;
-
 use clap::Parser;
+use log::*;
 
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Args {
-    /// Path to dumphfdl binary
-    #[arg(short, long, value_name = "FILE", default_value = "/usr/bin/dumphfdl")]
-    bin: Option<PathBuf>,
-
-    /// Path to dumphfdl system table configuration
-    #[arg(short, long, value_name = "FILE", default_value = "/etc/systable.conf")]
-    table: Option<PathBuf>,
-
-    /// Verbose mode
-    #[arg(short, long, default_value_t = false)]
-    verbose: bool,
-
-    /// Silence all output
-    #[arg(short, long, default_value_t = false)]
-    quiet: bool,
-}
+mod args;
+mod config;
 
 fn main() {
-    let args = Args::parse();
+    let args = args::Args::parse();
 
     stderrlog::new()
         .module(module_path!())
@@ -37,5 +19,12 @@ fn main() {
         .init()
         .unwrap();
 
-    println!("args = {:?}", args)
+    let config = match config::Config::from_args(&args) {
+        Ok(config) => config,
+        Err(e) => {
+            error!("Failed to parse configuration: {}", e);
+            return;
+        }
+    };
+    println!("{:?}", config);
 }
