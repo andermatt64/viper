@@ -1,3 +1,15 @@
 #!/bin/bash
 
+echo $*
 printf "Fake\n"
+
+printf "Ooof\n"
+sleep 2
+printf "112341\n"
+sleep 3
+
+while [ 1 ]
+do
+  printf "Some msg\n"
+  sleep 5
+done

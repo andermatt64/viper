@@ -7,6 +7,9 @@ import logging
 import os
 
 
+BANDWIDTH_LIMIT = 384
+
+
 def OutputFileType(path: str) -> str:
     parent_path = os.path.dirname(os.path.abspath(path))
     if not os.path.isdir(parent_path):
@@ -37,25 +40,26 @@ if __name__ == "__main__":
         stations[name] = {
             "id": station["id"],
             "name": name,
-            "wkt_coords": "POINT ({} {})".format(
-                station["lon"],
-                station["lat"]
-            )            
+            "lat": station["lat"],
+            "lon": station["lon"],
         }
 
         for freq in sorted(station["frequencies"]):
             freq = int(freq)
             for band in sorted(bands.keys()):
-                if -660 <= freq - bands[band][0] <= 660:
+                if -BANDWIDTH_LIMIT <= freq - bands[band][0] <= BANDWIDTH_LIMIT:
                     bands[band] = sorted(bands[band] + [freq])
                     break
             else:
                 band = int(freq / 1000.0)
                 bands[band] = [freq]
 
+    args.systable.seek(0)
+            
     info = {
         "stations": stations,
-        "bands": bands
+        "bands": bands,
+        "raw": args.systable.read(),
     }
 
     with open(args.output, "w") as fd:

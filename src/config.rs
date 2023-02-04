@@ -4,32 +4,44 @@ use std::path::PathBuf;
 use std::{env, fs};
 use url::Url;
 
-type GroundStationMap = HashMap<String, GroundStation>;
-type FrequencyBandMap = HashMap<u32, Vec<u32>>;
+pub type GroundStationMap = HashMap<String, GroundStation>;
+pub type FrequencyBandMap = HashMap<u32, Vec<u32>>;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GroundStation {
     id: u32,
     name: String,
-    wkt_coords: String,
+    lat: f64,
+    lon: f64,
+}
+
+impl GroundStation {
+    pub fn as_wkt(&self) -> String {
+        format!("POINT ({} {})", self.lon, self.lat)
+    }
+
+    pub fn as_point(&self) -> String {
+        format!("{} {}", self.lon, self.lat)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct HFDLInfo {
-    stations: GroundStationMap,
-    bands: FrequencyBandMap,
+    pub stations: GroundStationMap,
+    pub bands: FrequencyBandMap,
+    pub raw: String,
 }
 
 #[derive(Debug)]
 pub struct Config {
-    bin: PathBuf,
-    driver: String,
-    timeout: u32,
+    pub bin: PathBuf,
+    pub driver: String,
+    pub timeout: u32,
 
-    es_idx: String,
-    es_url: Url,
+    pub es_idx: String,
+    pub es_url: Url,
 
-    info: HFDLInfo,
+    pub info: HFDLInfo,
 }
 
 impl Config {
@@ -39,15 +51,8 @@ impl Config {
             Err(e) => return Err(format!("Unable to read dumphfdl system table: {}", e)),
         };
 
-        return Ok(match serde_json::from_str(&contents) {
-            Ok(info) => info,
-            Err(e) => {
-                return Err(format!(
-                    "Unable to deserialize dumphfdl system table: {}",
-                    e
-                ))
-            }
-        });
+        serde_json::from_str(&contents)
+            .map_err(|e| format!("Unable to deserialize dumphfdl system table: {}", e))
     }
 
     pub fn from_args(args: &crate::args::Args) -> Result<Config, String> {
@@ -64,37 +69,36 @@ impl Config {
             ));
         }
 
-        let soapy_driver = match env::var("VIPER_SOAPY_DRIVER") {
-            Ok(val) => {
+        let soapy_driver = env::var("VIPER_SOAPY_DRIVER").map_or_else(
+            |_| args.driver.clone(),
+            |val| {
                 if val.len() > 0 {
                     val
                 } else {
                     args.driver.clone()
                 }
-            }
-            Err(_) => args.driver.clone(),
-        };
-
-        let es_idx = match env::var("VIPER_ES_IDX") {
-            Ok(val) => {
+            },
+        );
+        let es_idx = env::var("VIPER_ES_IDX").map_or_else(
+            |_| args.es_idx.clone(),
+            |val| {
                 if val.len() > 0 {
                     val
                 } else {
                     args.es_idx.clone()
                 }
-            }
-            Err(_) => args.es_idx.clone(),
-        };
-        let es_url_str = match env::var("VIPER_ES_URL") {
-            Ok(val) => {
+            },
+        );
+        let es_url_str = env::var("VIPER_ES_URL").map_or_else(
+            |_| args.es_url.clone(),
+            |val| {
                 if val.len() > 0 {
                     val
                 } else {
                     args.es_url.clone()
                 }
-            }
-            Err(_) => args.es_url.clone(),
-        };
+            },
+        );
         let es_url = match url::Url::parse(es_url_str.as_str()) {
             Ok(url) => url,
             Err(e) => return Err(format!("ElasticSearch URL is not valid: {}", e)),
@@ -114,13 +118,13 @@ impl Config {
 
         let info = Config::parse_systable(&args.sys_table)?;
 
-        return Ok(Config {
+        Ok(Config {
             bin: args.bin.clone(),
             driver: soapy_driver,
             timeout: args.timeout,
             es_url,
             es_idx,
             info,
-        });
+        })
     }
 }

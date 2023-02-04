@@ -1,4 +1,5 @@
 use clap::Parser;
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -28,7 +29,7 @@ pub struct Args {
     #[arg(
         long,
         value_name = "PLUGIN_NAME[:KEY=VALUE,...]",
-        default_value = "default"
+        default_value = "single:band=13"
     )]
     pub chooser: String,
 
@@ -43,4 +44,31 @@ pub struct Args {
     /// Timeout in minutes to wait before switching HF bands
     #[arg(short, long, value_name = "MINUTES", default_value_t = 5)]
     pub timeout: u32,
+}
+
+impl Args {
+    pub fn chooser_params(&self) -> (&str, HashMap<&str, &str>) {
+        let mut props: HashMap<&str, &str> = HashMap::new();
+
+        let delim = match self.chooser.find(":") {
+            Some(val) => val,
+            None => return (&self.chooser, props),
+        };
+
+        let name = &self.chooser[..delim];
+
+        for kv in self.chooser[(delim + 1)..].split(",") {
+            let delim = match kv.find("=") {
+                Some(val) => val,
+                None => {
+                    props.insert(kv, "");
+                    continue;
+                }
+            };
+
+            props.insert(&kv[..delim], &kv[(delim + 1)..]);
+        }
+
+        (name, props)
+    }
 }
