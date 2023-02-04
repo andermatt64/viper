@@ -67,6 +67,7 @@ fn main() {
         };
         let mut proc = match Command::new(config.bin.clone())
             .stdout(Stdio::piped())
+            .stderr(Stdio::null())
             .arg("--soapysdr")
             .arg(config.driver.clone())
             .arg("--system-table")
@@ -120,7 +121,7 @@ fn main() {
         loop {
             select! {
                 recv(frame_recv) -> msg => {
-                    println!("{}", msg.unwrap());
+                    println!("FRAME: {}", msg.unwrap());
                 },
                 recv(after(timeout)) -> _ => {
                     if chooser.on_timeout() {
