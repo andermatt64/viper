@@ -35,10 +35,13 @@ fn main() {
             return;
         }
     };
+    info!("Configuration demarshalled from command line arguments.");
+    info!("  {}", config);
 
     let (name, props) = args.chooser_params();
+    info!("Chooser plugin name={} props={:?}", name, props);
 
-    let chooser = match chooser::get(name) {
+    let mut plugin = match chooser::get(name) {
         Some(plugin) => plugin,
         None => {
             error!("Invalid plugin name: {}", name);
@@ -58,14 +61,22 @@ fn main() {
 
     let systable_temp_path = systable.into_temp_path();
 
+    info!(
+        "System Table information written to {:?}",
+        systable_temp_path
+    );
+    info!("Starting listening session...\n");
+
     loop {
-        let band = match chooser.choose(&config.info.bands, &props) {
+        let band = match plugin.choose(&config.info.bands, &props) {
             Ok(val) => val.clone(),
             Err(e) => {
                 error!("Failed to choose a frequency band to listen to: {}", e);
                 return;
             }
         };
+        info!("Select band = {:?}", band);
+
         let mut proc = match Command::new(config.bin.clone())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
@@ -108,10 +119,14 @@ fn main() {
                     }
                 };
                 if size == 0 {
+                    error!(
+                        "Reader thread encountered 0 sized read, process might be dead: exiting..."
+                    );
                     break;
                 }
 
                 if frame_send.send(line).is_err() {
+                    error!("Reader thread failed to send to main thread: exiting...");
                     break;
                 }
             }
@@ -123,7 +138,9 @@ fn main() {
             select! {
                 recv(frame_recv) -> msg => {
                     if msg.is_ok() {
-                        let frame: Value = match serde_json::from_str(&msg.unwrap()) {
+                        let msg = msg.unwrap();
+
+                        let frame: Value = match serde_json::from_str(&msg) {
                             Ok(val) => val,
                             Err(e) => {
                                 error!("Bad JSON decode: {}", e);
@@ -131,15 +148,17 @@ fn main() {
                             },
                         };
 
-                        println!("{:?}", frame);
+                        println!("{}", msg);
 
-                        if chooser.on_update(&frame) {
+                        if plugin.on_update(&frame) {
+                            info!("Chooser update elected to change bands...");
                             break;
                         }
                     }
                 },
                 recv(after(timeout)) -> _ => {
-                    if chooser.on_timeout() {
+                    if plugin.on_timeout() {
+                        info!("Timeout! Chooser elected to change bands...");
                         break;
                     }
                 },
@@ -149,6 +168,6 @@ fn main() {
         proc.kill().unwrap();
         reader_thread.join().unwrap();
 
-        break;
+        info!("Ending session...");
     }
 }

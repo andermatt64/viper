@@ -10,14 +10,14 @@ pub const NAME: &'static str = "single";
 pub struct SingleChooserPlugin {}
 
 impl SingleChooserPlugin {
-    pub fn new() -> &'static Self {
-        &SingleChooserPlugin {}
+    pub fn new() -> Self {
+        SingleChooserPlugin {}
     }
 }
 
 impl ChooserPlugin for SingleChooserPlugin {
     fn choose<'a, 'b>(
-        &self,
+        &mut self,
         bands: &'a FrequencyBandMap,
         props: &'b HashMap<&str, &str>,
     ) -> Result<&'a Vec<u32>, String> {
@@ -27,7 +27,12 @@ impl ChooserPlugin for SingleChooserPlugin {
 
         let band: u32 = match props.get("band").unwrap().parse() {
             Ok(band) => band,
-            Err(e) => return Err(format!("'band' is not a valid positive number: {}", e)),
+            Err(e) => {
+                return Err(format!(
+                    "'band' key contains an invalid positive number: {}",
+                    e
+                ))
+            }
         };
 
         bands.get(&band).ok_or(format!("Invalid band: {}", band))

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::{env, fs};
+use std::{env, fmt, fs};
 
 pub type GroundStationMap = HashMap<String, GroundStation>;
 pub type FrequencyBandMap = HashMap<u32, Vec<u32>>;
@@ -74,5 +74,15 @@ impl Config {
             timeout: args.timeout,
             info,
         })
+    }
+}
+
+impl fmt::Display for Config {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Config {{ bin={:?}, driver={}, timeout={}m }}",
+            self.bin, self.driver, self.timeout
+        )
     }
 }
