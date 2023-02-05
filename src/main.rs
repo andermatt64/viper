@@ -156,6 +156,7 @@ fn main() {
                             },
                         };
 
+                        info!("Received {} byte frame...", msg.len());
                         println!("{}", msg.trim());
 
                         if plugin.on_update(&frame) {
