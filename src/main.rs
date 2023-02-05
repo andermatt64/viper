@@ -65,7 +65,8 @@ fn main() {
         "System Table information written to {:?}",
         systable_temp_path
     );
-    info!("Starting listening session...\n");
+    info!("Starting listening session...");
+    info!("");
 
     loop {
         let band = match plugin.choose(&config.info.bands, &props) {
@@ -75,7 +76,16 @@ fn main() {
                 return;
             }
         };
-        info!("Select band = {:?}", band);
+        info!("New session started: band={:?}", band);
+
+        let bandwidth = match band.iter().max().unwrap_or(&0) - band.iter().min().unwrap_or(&0) {
+            d if d > 256 && d <= 384 => "384000",
+            d if d <= 256 => "256000",
+            _ => {
+                error!("Bandwidth calculation failed: {:?}", band);
+                return;
+            }
+        };
 
         let mut proc = match Command::new(config.bin.clone())
             .stdout(Stdio::piped())
@@ -87,7 +97,7 @@ fn main() {
             .arg("--output")
             .arg("decoded:json:file:path=-")
             .arg("--sample-rate")
-            .arg("384000")
+            .arg(bandwidth)
             .args(band.into_iter().map(|f| f.to_string()))
             .spawn()
         {
@@ -119,9 +129,7 @@ fn main() {
                     }
                 };
                 if size == 0 {
-                    error!(
-                        "Reader thread encountered 0 sized read, process might be dead: exiting..."
-                    );
+                    error!("Reader thread encountered empty read: exiting...");
                     break;
                 }
 
@@ -132,7 +140,7 @@ fn main() {
             }
         });
 
-        let timeout = Duration::from_secs((config.timeout as u64) * 60);
+        let timeout = Duration::from_secs(config.timeout as u64);
 
         loop {
             select! {
@@ -148,7 +156,7 @@ fn main() {
                             },
                         };
 
-                        println!("{}", msg);
+                        println!("{}", msg.trim());
 
                         if plugin.on_update(&frame) {
                             info!("Chooser update elected to change bands...");
@@ -169,5 +177,6 @@ fn main() {
         reader_thread.join().unwrap();
 
         info!("Ending session...");
+        info!("");
     }
 }

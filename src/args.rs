@@ -33,8 +33,8 @@ pub struct Args {
     #[arg(short, long, default_value_t = false)]
     pub quiet: bool,
 
-    /// Timeout in minutes to wait before switching HF bands
-    #[arg(short, long, value_name = "MINUTES", default_value_t = 5)]
+    /// Timeout in seconds to wait before switching HF bands
+    #[arg(short, long, value_name = "SECONDS", default_value_t = 150)]
     pub timeout: u32,
 }
 
