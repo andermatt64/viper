@@ -13,14 +13,6 @@ pub struct Args {
     #[arg(long, value_name = "FILE", default_value = "/etc/systable.conf")]
     pub sys_table: PathBuf,
 
-    /// ElasticSearch index name (override w/ VIPER_ES_IDX)
-    #[arg(long, value_name = "INDEX_NAME", default_value = "hfdl_db")]
-    pub es_idx: String,
-
-    /// ElasticSearch URL (override w/ VIPER_ES_URL)
-    #[arg(long, value_name = "URL", default_value = "http://localhost:5900")]
-    pub es_url: String,
-
     /// SoapySDR driver configuration (override w/ VIPER_SOAPY_DRIVER)
     #[arg(long, value_name = "DRIVER", default_value = "driver=airspyhf")]
     pub driver: String,

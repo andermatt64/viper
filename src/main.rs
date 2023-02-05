@@ -1,8 +1,9 @@
 use crossbeam::channel::{after, bounded, select};
+use serde_json::Value;
 use std::io::{BufRead, BufReader, Seek, SeekFrom, Write};
 use std::process::{Command, Stdio};
 use std::thread;
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 use tempfile::NamedTempFile;
 
 use clap::Parser;
@@ -121,7 +122,21 @@ fn main() {
         loop {
             select! {
                 recv(frame_recv) -> msg => {
-                    println!("FRAME: {}", msg.unwrap());
+                    if msg.is_ok() {
+                        let frame: Value = match serde_json::from_str(&msg.unwrap()) {
+                            Ok(val) => val,
+                            Err(e) => {
+                                error!("Bad JSON decode: {}", e);
+                                continue;
+                            },
+                        };
+
+                        println!("{:?}", frame);
+
+                        if chooser.on_update(&frame) {
+                            break;
+                        }
+                    }
                 },
                 recv(after(timeout)) -> _ => {
                     if chooser.on_timeout() {

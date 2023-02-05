@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use serde_json::Value;
+
 use crate::chooser::ChooserPlugin;
 use crate::config::FrequencyBandMap;
 
@@ -29,6 +31,10 @@ impl ChooserPlugin for SingleChooserPlugin {
         };
 
         bands.get(&band).ok_or(format!("Invalid band: {}", band))
+    }
+
+    fn on_update(&self, _frame: &Value) -> bool {
+        false
     }
 
     fn on_timeout(&self) -> bool {

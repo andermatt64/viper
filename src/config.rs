@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::{env, fs};
-use url::Url;
 
 pub type GroundStationMap = HashMap<String, GroundStation>;
 pub type FrequencyBandMap = HashMap<u32, Vec<u32>>;
@@ -13,16 +12,6 @@ pub struct GroundStation {
     name: String,
     lat: f64,
     lon: f64,
-}
-
-impl GroundStation {
-    pub fn as_wkt(&self) -> String {
-        format!("POINT ({} {})", self.lon, self.lat)
-    }
-
-    pub fn as_point(&self) -> String {
-        format!("{} {}", self.lon, self.lat)
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -37,9 +26,6 @@ pub struct Config {
     pub bin: PathBuf,
     pub driver: String,
     pub timeout: u32,
-
-    pub es_idx: String,
-    pub es_url: Url,
 
     pub info: HFDLInfo,
 }
@@ -79,42 +65,6 @@ impl Config {
                 }
             },
         );
-        let es_idx = env::var("VIPER_ES_IDX").map_or_else(
-            |_| args.es_idx.clone(),
-            |val| {
-                if val.len() > 0 {
-                    val
-                } else {
-                    args.es_idx.clone()
-                }
-            },
-        );
-        let es_url_str = env::var("VIPER_ES_URL").map_or_else(
-            |_| args.es_url.clone(),
-            |val| {
-                if val.len() > 0 {
-                    val
-                } else {
-                    args.es_url.clone()
-                }
-            },
-        );
-        let es_url = match url::Url::parse(es_url_str.as_str()) {
-            Ok(url) => url,
-            Err(e) => return Err(format!("ElasticSearch URL is not valid: {}", e)),
-        };
-        if es_url.cannot_be_a_base() {
-            return Err(format!(
-                "ElasticSearch URL cannot be a data URL: {}",
-                Into::<String>::into(es_url)
-            ));
-        }
-        if !["http", "https"].contains(&es_url.scheme()) {
-            return Err(format!(
-                "ElasticSearch URL must start with http or https: {}",
-                Into::<String>::into(es_url)
-            ));
-        }
 
         let info = Config::parse_systable(&args.sys_table)?;
 
@@ -122,8 +72,6 @@ impl Config {
             bin: args.bin.clone(),
             driver: soapy_driver,
             timeout: args.timeout,
-            es_url,
-            es_idx,
             info,
         })
     }
