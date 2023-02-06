@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-
+use rand::Rng;
 use serde_json::Value;
+use std::collections::HashMap;
 
 use crate::chooser::ChooserPlugin;
 use crate::config::FrequencyBandMap;
@@ -26,6 +26,8 @@ impl ChooserPlugin for RotateChooserPlugin {
         let mut band_keys: Vec<&u32> = bands.keys().into_iter().collect();
         band_keys.sort_unstable();
 
+        let switcher = *props.get("type").unwrap_or(&"inc");
+
         if self.band_idx.is_none() {
             let start: u32 = match props.get("start").unwrap_or(&"13").parse() {
                 Ok(start) => start,
@@ -41,6 +43,19 @@ impl ChooserPlugin for RotateChooserPlugin {
             if self.band_idx.is_none() {
                 return Err(format!("'start' key value ({}) is not a valid band", start));
             }
+        } else if switcher.eq("dec") {
+            if self.band_idx.unwrap() == 0 {
+                self.band_idx = Some(band_keys.len() - 1);
+            } else {
+                self.band_idx = Some(self.band_idx.unwrap() - 1);
+            }
+        } else if switcher.eq("random") {
+            let old_idx = self.band_idx.unwrap();
+            let mut new_idx = old_idx;
+            while new_idx == old_idx {
+                new_idx = rand::thread_rng().gen_range(0..(band_keys.len() - 1))
+            }
+            self.band_idx = Some(new_idx);
         } else {
             if self.band_idx.unwrap() + 1 >= band_keys.len() {
                 self.band_idx = Some(0);
