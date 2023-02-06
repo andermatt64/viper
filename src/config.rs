@@ -81,7 +81,7 @@ impl fmt::Display for Config {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Config {{ bin={:?}, driver={}, timeout={}m }}",
+            "Config {{ bin={:?}, driver={}, timeout={}s }}",
             self.bin, self.driver, self.timeout
         )
     }
