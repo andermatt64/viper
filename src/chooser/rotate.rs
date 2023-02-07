@@ -1,3 +1,4 @@
+use log::*;
 use rand::Rng;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -7,13 +8,19 @@ use crate::config::FrequencyBandMap;
 
 pub const NAME: &'static str = "rotate";
 
+const MAX_MEMORY_ENTRIES: usize = 8;
+
 pub struct RotateChooserPlugin {
+    recently_used: Vec<usize>,
     band_idx: Option<usize>,
 }
 
 impl RotateChooserPlugin {
     pub fn new() -> Self {
-        RotateChooserPlugin { band_idx: None }
+        RotateChooserPlugin {
+            band_idx: None,
+            recently_used: vec![],
+        }
     }
 }
 
@@ -44,24 +51,49 @@ impl ChooserPlugin for RotateChooserPlugin {
                 return Err(format!("'start' key value ({}) is not a valid band", start));
             }
         } else if switcher.eq("dec") {
+            info!("[dec]    current band_idx = {:?}", self.band_idx);
+
             if self.band_idx.unwrap() == 0 {
                 self.band_idx = Some(band_keys.len() - 1);
             } else {
                 self.band_idx = Some(self.band_idx.unwrap() - 1);
             }
+
+            info!("[dec]    next band_idx = {:?}", self.band_idx);
         } else if switcher.eq("random") {
-            let old_idx = self.band_idx.unwrap();
-            let mut new_idx = old_idx;
-            while new_idx == old_idx {
+            let mut new_idx = self.band_idx.unwrap();
+            info!(
+                "[random] current band_idx = {:?}, recently_used = {:?}",
+                self.band_idx, self.recently_used
+            );
+
+            while self
+                .recently_used
+                .iter()
+                .position(|&b| b == new_idx)
+                .is_some()
+            {
                 new_idx = rand::thread_rng().gen_range(0..(band_keys.len() - 1))
             }
+
+            if self.recently_used.len() == MAX_MEMORY_ENTRIES {
+                self.recently_used.remove(0);
+            }
+
+            self.recently_used.push(new_idx);
             self.band_idx = Some(new_idx);
+
+            info!("[random] next band_idx = {:?}", self.band_idx);
         } else {
+            info!("[inc]    current band_idx = {:?}", self.band_idx);
+
             if self.band_idx.unwrap() + 1 >= band_keys.len() {
                 self.band_idx = Some(0);
             } else {
                 self.band_idx = Some(self.band_idx.unwrap() + 1);
             }
+
+            info!("[inc]    next band_idx = {:?}", self.band_idx);
         }
 
         let band = band_keys[self.band_idx.unwrap()];
