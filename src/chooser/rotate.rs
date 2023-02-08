@@ -50,6 +50,8 @@ impl ChooserPlugin for RotateChooserPlugin {
             if self.band_idx.is_none() {
                 return Err(format!("'start' key value ({}) is not a valid band", start));
             }
+
+            self.recently_used.push(self.band_idx.unwrap());
         } else if switcher.eq("dec") {
             info!("[dec]    current band_idx = {:?}", self.band_idx);
 
