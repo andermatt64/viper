@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 pub mod rotate;
 pub mod single;
+pub mod target;
 
 pub trait ChooserPlugin {
     fn choose<'a, 'b>(
@@ -20,6 +21,7 @@ pub fn get(name: &str) -> Option<Box<dyn ChooserPlugin>> {
     match name {
         rotate::NAME => Some(Box::new(rotate::RotateChooserPlugin::new())),
         single::NAME => Some(Box::new(single::SingleChooserPlugin::new())),
+        target::NAME => Some(Box::new(target::TargetChooserPlugin::new())),
         _ => None,
     }
 }
