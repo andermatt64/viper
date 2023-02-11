@@ -237,6 +237,8 @@ impl ChooserPlugin for TrackerChooserPlugin {
 
         if let Some(timer) = self.gs_last_heard {
             if timer.elapsed().as_secs() > self.last_heard_timeout {
+                self.gs_last_heard = None;
+
                 info!(
                     "Been too long (>{}s) since last message heard to/from target GS {}",
                     self.last_heard_timeout,
