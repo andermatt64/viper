@@ -61,6 +61,11 @@ fn main() {
 
     let systable_temp_path = systable.into_temp_path();
 
+    let mut addition_args: Vec<String> = vec![];
+    if let Some(output) = config.output {
+        addition_args.extend_from_slice(&["--output".to_string(), output])
+    }
+
     info!(
         "System Table information written to {:?}",
         systable_temp_path
@@ -94,10 +99,11 @@ fn main() {
             .arg(config.driver.clone())
             .arg("--system-table")
             .arg(systable_temp_path.to_path_buf())
-            .arg("--output")
-            .arg("decoded:json:file:path=-")
             .arg("--sample-rate")
             .arg(bandwidth)
+            .arg("--output")
+            .arg("decoded:json:file:path=-")
+            .args(&addition_args)
             .args(band.into_iter().map(|f| f.to_string()))
             .spawn()
         {

@@ -25,6 +25,7 @@ pub struct HFDLInfo {
 pub struct Config {
     pub bin: PathBuf,
     pub driver: String,
+    pub output: Option<String>,
     pub timeout: u32,
 
     pub info: HFDLInfo,
@@ -71,6 +72,7 @@ impl Config {
         Ok(Config {
             bin: args.bin.clone(),
             driver: soapy_driver,
+            output: args.output.clone(),
             timeout: args.timeout,
             info,
         })
@@ -81,8 +83,8 @@ impl fmt::Display for Config {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Config {{ bin={:?}, driver={}, timeout={}s }}",
-            self.bin, self.driver, self.timeout
+            "Config {{ bin={:?}, driver={}, output={:?} timeout={}s }}",
+            self.bin, self.driver, self.output, self.timeout
         )
     }
 }

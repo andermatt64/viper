@@ -36,6 +36,10 @@ pub struct Args {
     /// Timeout in seconds to wait before switching HF bands
     #[arg(short, long, value_name = "SECONDS", default_value_t = 150)]
     pub timeout: u32,
+
+    /// Output parameters passthrough to dumphfdl
+    #[arg(short, long, value_name = "OUTPUT")]
+    pub output: Option<String>,
 }
 
 impl Args {
