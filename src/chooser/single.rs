@@ -38,11 +38,11 @@ impl ChooserPlugin for SingleChooserPlugin {
         bands.get(&band).ok_or(format!("Invalid band: {}", band))
     }
 
-    fn on_update(&self, _frame: &Value) -> bool {
+    fn on_update(&mut self, _frame: &Value) -> bool {
         false
     }
 
-    fn on_timeout(&self) -> bool {
+    fn on_timeout(&mut self) -> bool {
         false
     }
 }

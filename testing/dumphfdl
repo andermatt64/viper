@@ -1,15 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-echo $*
-printf "Fake\n"
+import io
+import socketserver
+import sys
 
-printf "Ooof\n"
-sleep 2
-printf "112341\n"
-sleep 3
-
-while [ 1 ]
-do
-  printf "Some msg\n"
-  sleep 5
-done
+class EchoServerHandler(socketserver.BaseRequestHandler):
+  def handle(self):
+    data = self.request.recv(4096).decode("utf-8")
+    print(data.strip())
+    sys.stdout.flush()
+    
+if __name__ == "__main__":
+  with socketserver.TCPServer(("localhost", 9000), EchoServerHandler) as server:
+    server.serve_forever()
