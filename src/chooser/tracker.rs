@@ -1,6 +1,6 @@
 use log::*;
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use rand::seq::SliceRandom;
 use serde::Deserialize;
@@ -12,12 +12,14 @@ use crate::config::FrequencyBandMap;
 pub const NAME: &'static str = "tracker";
 pub const MAX_VISITED_ENTRIES: usize = 6;
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 struct Frequency {
     id: u8,
     freq: f64,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 struct Entity {
     id: u8,
@@ -29,6 +31,7 @@ struct Entity {
     entity_name: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 struct GroundStation {
     gs: Entity,
@@ -36,6 +39,7 @@ struct GroundStation {
     freqs: Vec<Frequency>,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 struct LPDU {
     err: bool,
@@ -43,6 +47,7 @@ struct LPDU {
     dst: Entity,
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 struct SPDU {
     err: bool,
@@ -187,6 +192,7 @@ impl ChooserPlugin for TrackerChooserPlugin {
         };
 
         let freq = msg.hfdl.freq / 1000;
+        let mut spdu_contains_target = false;
 
         if msg.hfdl.spdu.is_some() {
             let spdu = msg.hfdl.spdu.unwrap();
@@ -216,6 +222,7 @@ impl ChooserPlugin for TrackerChooserPlugin {
                         "Found SPDU containing target GS freqs: {:?}",
                         self.target_bands
                     );
+                    spdu_contains_target = true;
                     break;
                 }
             }
@@ -246,9 +253,12 @@ impl ChooserPlugin for TrackerChooserPlugin {
                 );
 
                 self.determine_next_band();
-
                 return true;
             }
+        } else if spdu_contains_target {
+            info!("Switching bands to bands heard from SPDU containing target");
+            self.determine_next_band();
+            return true;
         }
 
         false
